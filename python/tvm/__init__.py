@@ -60,6 +60,7 @@ from . import parser
 
 # others
 from . import arith
+from . import hago
 
 # support infra
 from . import support

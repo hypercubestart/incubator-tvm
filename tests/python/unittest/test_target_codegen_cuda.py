@@ -771,7 +771,6 @@ def test_cuda_vectorize_load_permute_pad():
     check_cuda("float16", 64, 16, 3, 4)
     check_cuda("float32", 64, 16, 3, 4)
 
-
 def vcf_check_common(s, args):
     N = 512
 
@@ -965,7 +964,6 @@ def test_unrolled_vectorization():
     func_tvm(a_tvm, b_tvm, c_tvm)
     c_np = c_tvm.asnumpy()
     tvm.testing.assert_allclose(c_np, N * np.ones((N, N)))
-
 
 if __name__ == "__main__":
     test_cuda_vectorize_add()
