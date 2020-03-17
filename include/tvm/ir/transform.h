@@ -60,6 +60,7 @@
 #include <tvm/node/container.h>
 #include <tvm/ir/error.h>
 #include <tvm/ir/module.h>
+#include <tvm/relay/feature.h>
 #include <string>
 
 namespace tvm {
@@ -260,12 +261,33 @@ class PassNode : public Object {
    *
    * \return The transformed module.
    */
-  virtual IRModule operator()(const IRModule& mod,
+  IRModule operator()(const IRModule& mod, const PassContext& pass_ctx) const {
+    Array<tvm::relay::FeatureSet> pass_features = this->registeredPassFeatures();
+    CHECK(pass_features.size() == 3) << 
+      "Registered Pass Features requires array of size 3: [input_features, add_features, remove_features]";
+    tvm::relay::FeatureSet input_features = pass_features[0];
+    tvm::relay::FeatureSet add_features = pass_features[1];
+    tvm::relay::FeatureSet remove_features = pass_features[2];
+
+    // check precondition
+    tvm::relay::FeatureSet mod_features = tvm::relay::DetectFeature(mod);
+    CHECK(mod_features.is_subset_of(input_features));
+
+    IRModule updatedMod = this->passImpl(mod, pass_ctx);
+
+    // check postconditoni
+    mod_features = tvm::relay::DetectFeature(updatedMod);
+    CHECK(mod_features.is_subset_of(input_features + add_features - remove_features));
+  }
+
+  virtual IRModule passImpl(const IRModule& mod,
                               const PassContext& pass_ctx) const = 0;
 
   void VisitAttrs(AttrVisitor* v) {}
 
-  static constexpr const char* _type_key = "transform.Pass";
+  virtual Array<tvm::relay::FeatureSet> registeredPassFeatures() const = 0;
+
+  static constexpr const char* _type_key = "relay.Pass";
   TVM_DECLARE_BASE_OBJECT_INFO(PassNode, Object);
 };
 
@@ -297,7 +319,6 @@ class Pass : public ObjectRef {
     CHECK(node != nullptr);
     return node->operator()(mod, pass_ctx);
   }
-
   TVM_DEFINE_OBJECT_REF_METHODS(Pass, ObjectRef, PassNode);
 };
 

@@ -68,7 +68,7 @@ class FunctionPassNode : public PassNode {
    *
    * \return Return the updated module.
    */
-  IRModule operator()(const IRModule& mod, const PassContext& pass_ctx) const final;
+  IRModule passImpl(const IRModule& mod, const PassContext& pass_ctx) const final;
 
   /*!
    * \brief Get the pass information/meta data.
@@ -108,7 +108,7 @@ FunctionPass FunctionPassNode::make(
 }
 
 // Perform Module -> Module optimizations at the Function level.
-IRModule FunctionPassNode::operator()(const IRModule& mod,
+IRModule FunctionPassNode::passImpl(const IRModule& mod,
                                       const PassContext& pass_ctx) const {
   const PassInfo& pass_info = Info();
   CHECK(mod.defined());

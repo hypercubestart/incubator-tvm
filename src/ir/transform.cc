@@ -125,7 +125,7 @@ class ModulePassNode : public PassNode {
    *
    * \return Return the updated module.
    */
-  IRModule operator()(const IRModule& mod, const PassContext& pass_ctx) const final;
+  IRModule passImpl(const IRModule& mod, const PassContext& pass_ctx) const final;
 
   /*!
    * \brief Get the pass information/meta data.
@@ -204,7 +204,7 @@ class SequentialNode : public PassNode {
    *
    * \return Return the updated module.
    */
-  IRModule operator()(const IRModule& mod, const PassContext& pass_ctx) const final;
+  IRModule passImpl(const IRModule& mod, const PassContext& pass_ctx) const final;
 
   static constexpr const char* _type_key = "transform.Sequential";
   TVM_DECLARE_FINAL_OBJECT_INFO(SequentialNode, PassNode);
@@ -230,7 +230,7 @@ ModulePass::ModulePass(
 }
 
 // Module -> Module optimizations.
-IRModule ModulePassNode::operator()(const IRModule& mod,
+IRModule ModulePassNode::passImpl(const IRModule& mod,
                                     const PassContext& pass_ctx) const {
   const PassInfo& pass_info = Info();
   DLOG(INFO) << "Executing module pass : "
@@ -315,7 +315,7 @@ Pass GetPass(const std::string& pass_name) {
 // TODO(zhiics): we currenlty only sequentially execute each pass in
 // a Sequential without the consideration of their orders. The phase
 // ordering problem needs to be handled in the future.
-IRModule SequentialNode::operator()(const IRModule& module,
+IRModule SequentialNode::passImpl(const IRModule& module,
                                     const PassContext& pass_ctx) const {
   IRModule mod = module;
   for (const Pass& pass : passes) {
