@@ -128,6 +128,14 @@ class ModulePassNode : public PassNode {
   IRModule passImpl(const IRModule& mod, const PassContext& pass_ctx) const final;
 
   /*!
+   * \brief Return input_features, add_features, remove_features
+   *
+   * \return tuple of Feature Sets
+   */
+  std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
+                                            registeredPassFeatures() const final;
+
+  /*!
    * \brief Get the pass information/meta data.
    */
   PassInfo Info() const override { return pass_info; }
@@ -206,6 +214,15 @@ class SequentialNode : public PassNode {
    */
   IRModule passImpl(const IRModule& mod, const PassContext& pass_ctx) const final;
 
+  /*!
+   * \brief Return input_features, add_features, remove_features
+   *
+   * \return tuple of Feature Sets
+   */
+  std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
+                                            registeredPassFeatures() const final;
+
+
   static constexpr const char* _type_key = "transform.Sequential";
   TVM_DECLARE_FINAL_OBJECT_INFO(SequentialNode, PassNode);
 };
@@ -243,6 +260,17 @@ IRModule ModulePassNode::passImpl(const IRModule& mod,
   CHECK(updated_mod.defined());
   pass_ctx.Trace(updated_mod, pass_info, false);
   return updated_mod;
+}
+
+std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
+ModulePassNode::registeredPassFeatures() const {
+  // input features to the pass
+  relay::FeatureSet input_features = relay::FeatureSet::All();
+  
+  relay::FeatureSet add_features = relay::FeatureSet::No();
+  relay::FeatureSet remove_features = relay::FeatureSet::No();
+
+  return std::make_tuple(input_features, add_features, remove_features);
 }
 
 Sequential::Sequential(tvm::Array<Pass> passes, PassInfo pass_info) {
@@ -331,6 +359,17 @@ IRModule SequentialNode::passImpl(const IRModule& module,
     mod = pass(mod, pass_ctx);
   }
   return mod;
+}
+
+std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
+SequentialNode::registeredPassFeatures() const {
+  // input features to the pass
+  relay::FeatureSet input_features = relay::FeatureSet::All();
+  
+  relay::FeatureSet add_features = relay::FeatureSet::No();
+  relay::FeatureSet remove_features = relay::FeatureSet::No();
+
+  return std::make_tuple(input_features, add_features, remove_features);
 }
 
 Pass CreateModulePass(

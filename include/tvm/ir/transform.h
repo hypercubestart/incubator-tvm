@@ -243,7 +243,7 @@ class PassNode : public Object {
   virtual PassInfo Info() const = 0;
 
   /*!
-   * \brief Transform mod using the default PassContext in the current scope.
+   * \brief Transform mod using the default PassContext in the current scope and check features pre/post conditions.
    *
    * \param mod The module that an optimization pass runs on.
    *
@@ -254,7 +254,7 @@ class PassNode : public Object {
   }
 
   /*!
-   * \brief Transform mod using a functor under a given pass context.
+   * \brief Transform mod using a functor under a given pass context and check features pre/post conditions.
    *
    * \param mod The module that an optimization pass runs on.
    * \param pass_ctx The pass context that can provide information for the optimization.
@@ -262,12 +262,11 @@ class PassNode : public Object {
    * \return The transformed module.
    */
   IRModule operator()(const IRModule& mod, const PassContext& pass_ctx) const {
-    Array<tvm::relay::FeatureSet> pass_features = this->registeredPassFeatures();
-    CHECK(pass_features.size() == 3) << 
-      "Registered Pass Features requires array of size 3: [input_features, add_features, remove_features]";
-    tvm::relay::FeatureSet input_features = pass_features[0];
-    tvm::relay::FeatureSet add_features = pass_features[1];
-    tvm::relay::FeatureSet remove_features = pass_features[2];
+    auto pass_features = this->registeredPassFeatures();
+
+    relay::FeatureSet input_features = std::get<0>(pass_features);
+    relay::FeatureSet add_features = std::get<1>(pass_features);
+    relay::FeatureSet remove_features = std::get<2>(pass_features);
 
     // check precondition
     tvm::relay::FeatureSet mod_features = tvm::relay::DetectFeature(mod);
@@ -278,14 +277,30 @@ class PassNode : public Object {
     // check postconditoni
     mod_features = tvm::relay::DetectFeature(updatedMod);
     CHECK(mod_features.is_subset_of(input_features + add_features - remove_features));
+
+    return updatedMod;
   }
 
+  /*!
+   * \brief Transform mod using a functor under a given pass context.
+   *
+   * \param mod The module that an optimization pass runs on.
+   * \param pass_ctx The pass context that can provide information for the optimization.
+   *
+   * \return The transformed module.
+   */
   virtual IRModule passImpl(const IRModule& mod,
                               const PassContext& pass_ctx) const = 0;
 
   void VisitAttrs(AttrVisitor* v) {}
 
-  virtual Array<tvm::relay::FeatureSet> registeredPassFeatures() const = 0;
+  /*!
+   * \brief Return input_features, add_features, remove_features
+   *
+   * \return tuple of Feature Sets
+   */
+  virtual std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
+                                            registeredPassFeatures() const = 0;
 
   static constexpr const char* _type_key = "relay.Pass";
   TVM_DECLARE_BASE_OBJECT_INFO(PassNode, Object);

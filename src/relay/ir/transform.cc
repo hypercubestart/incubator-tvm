@@ -71,6 +71,14 @@ class FunctionPassNode : public PassNode {
   IRModule passImpl(const IRModule& mod, const PassContext& pass_ctx) const final;
 
   /*!
+   * \brief Return input_features, add_features, remove_features
+   *
+   * \return tuple of Feature Sets
+   */
+  std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
+                                            registeredPassFeatures() const final;
+
+  /*!
    * \brief Get the pass information/meta data.
    */
   PassInfo Info() const override { return pass_info; }
@@ -136,6 +144,17 @@ IRModule FunctionPassNode::passImpl(const IRModule& mod,
   }
   pass_ctx.Trace(updated_mod, pass_info, false);
   return updated_mod;
+}
+
+std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
+FunctionPassNode::registeredPassFeatures() const {
+  // input features to the pass
+  relay::FeatureSet input_features = relay::FeatureSet::All();
+  
+  relay::FeatureSet add_features = relay::FeatureSet::No();
+  relay::FeatureSet remove_features = relay::FeatureSet::No();
+
+  return std::make_tuple(input_features, add_features, remove_features);
 }
 
 bool FunctionPassNode::SkipFunction(const Function& func) const {
