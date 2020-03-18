@@ -302,7 +302,7 @@ class PassNode : public Object {
   virtual std::tuple<relay::FeatureSet, relay::FeatureSet, relay::FeatureSet> 
                                             registeredPassFeatures() const = 0;
 
-  static constexpr const char* _type_key = "relay.Pass";
+  static constexpr const char* _type_key = "transform.Pass";
   TVM_DECLARE_BASE_OBJECT_INFO(PassNode, Object);
 };
 
