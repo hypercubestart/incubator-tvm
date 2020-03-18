@@ -254,7 +254,7 @@ class PassNode : public Object {
   }
 
   /*!
-   * \brief Transform mod using a functor under a given pass context and check features pre/post conditions.
+   * \brief Transform mod using a functor under a given pass context and eagerly check features pre/post conditions.
    *
    * \param mod The module that an optimization pass runs on.
    * \param pass_ctx The pass context that can provide information for the optimization.
@@ -262,22 +262,25 @@ class PassNode : public Object {
    * \return The transformed module.
    */
   IRModule operator()(const IRModule& mod, const PassContext& pass_ctx) const {
-    auto pass_features = this->registeredPassFeatures();
-
-    relay::FeatureSet input_features = std::get<0>(pass_features);
-    relay::FeatureSet add_features = std::get<1>(pass_features);
-    relay::FeatureSet remove_features = std::get<2>(pass_features);
-
-    // check precondition
-    tvm::relay::FeatureSet mod_features = tvm::relay::DetectFeature(mod);
-    CHECK(mod_features.is_subset_of(input_features));
-
     IRModule updatedMod = this->passImpl(mod, pass_ctx);
 
-    // check postconditoni
-    mod_features = tvm::relay::DetectFeature(updatedMod);
-    CHECK(mod_features.is_subset_of(input_features + add_features - remove_features));
+    if (!updatedMod.defined()) {
+      // eagerly perform precondition/postcondition check
+      auto pass_features = this->registeredPassFeatures();
 
+      relay::FeatureSet input_features = std::get<0>(pass_features);
+      relay::FeatureSet add_features = std::get<1>(pass_features);
+      relay::FeatureSet remove_features = std::get<2>(pass_features);
+
+      // check precondition
+      tvm::relay::FeatureSet mod_features = tvm::relay::DetectFeature(mod);
+      CHECK(mod_features.is_subset_of(input_features)) << "unexpected input feature";
+
+      // check postconditon
+      mod_features = tvm::relay::DetectFeature(updatedMod);
+      CHECK(mod_features.is_subset_of(input_features + add_features - remove_features)) << "unexpected output feature";
+    }
+    
     return updatedMod;
   }
 
