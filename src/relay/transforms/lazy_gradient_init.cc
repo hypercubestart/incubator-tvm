@@ -107,7 +107,7 @@ struct TypeCallEqual {
     }
 
     for (size_t i = 0; i < l->args.size(); i++) {
-      if (!GraphEqual(l->args[i], r->args[i])) {
+      if (!tvm::StructuralEqual()(l->args[i], r->args[i], true)) {
         return false;
       }
     }
@@ -748,14 +748,9 @@ class LazyGradientInitializer: public ExprMutator,
       // handle all other ops
       Expr result = CallPrimitiveOp(call_node);
       // wrap result with Raw constructor
-<<<<<<< HEAD
-      return Call(module_->GetConstructor("GradCell", "Raw"), {result},
-                  Attrs(), {call_node->checked_type()});
-=======
       return grad_cell_wrapper_->VisitExpr(result, call_node->checked_type(), grad_cell_unwrapper_);
-    
->>>>>>> support ADT and FuncTypes
     }
+
     if (auto* op = (call_node->op).as<ConstructorNode>()) {
       // create "GradCell-version" of ADT if not already created 
       adt_transformer_->VisitType(op->belong_to);
