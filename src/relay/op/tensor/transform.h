@@ -58,6 +58,9 @@ bool ConcatenateRel(const Array<Type>& types,
   }
 
   const auto* param = attrs.as<AttrType>();
+  if (param == nullptr) {
+    return false;
+  }
   if (tensor_tuple->fields[0].as<IncompleteTypeNode>()) {
     return false;
   }

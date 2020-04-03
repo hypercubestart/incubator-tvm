@@ -203,6 +203,9 @@ bool ExpandDimsRel(const Array<Type>& types,
     return false;
   }
   const auto* param = attrs.as<ExpandDimsAttrs>();
+  if (param == nullptr) {
+    return false;
+  }
   const int ndim = static_cast<int>(data->shape.size());
   const int axis = param->axis;
   const int num_newaxis = param->num_newaxis;
