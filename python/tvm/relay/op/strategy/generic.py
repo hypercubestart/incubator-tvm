@@ -1503,3 +1503,7 @@ def unique_strategy(attrs, inputs, out_type, target):
         name="unique.generic",
     )
     return strategy
+
+@generic_func
+def schedule_simulated_quantize(attrs, outs, target):
+    return topi.generic.default.default_schedule(outs, auto_inline=False)
