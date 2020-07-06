@@ -1034,3 +1034,7 @@ def unique_strategy_cuda(attrs, inputs, out_type, target):
         name="unique.cuda",
     )
     return strategy
+
+@schedule_simulated_quantize.register(["cuda", "gpu"])
+def schedule_simulated_quantize_cuda(attrs, outs, target):
+    return topi.cuda.schedule_injective(outs)
