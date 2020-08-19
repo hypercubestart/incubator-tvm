@@ -911,7 +911,7 @@ IRModule LazyGradientInit(const IRModule& m) {
   for (const auto& gv : gvs) {
     m->AddUnchecked(gv, lgi.VisitGlobalVar(gv));
   }
-  m->Check();
+  // m->Check();
   return m;
 }
 

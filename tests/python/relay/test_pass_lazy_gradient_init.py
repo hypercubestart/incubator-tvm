@@ -427,5 +427,18 @@ def test_list_adt():
   actual = from_list_adt(ex.evaluate(mod['rev'])(to_list_adt(x)))
   assert_allclose(x[::-1], actual)
 
+def prelude():
+  """test prelude functions on list ADT. which is a recursive ADT"""
+  mod = tvm.IRModule()
+  p = Prelude(mod)
+
+  x = relay.Var('x', relay.TensorType((),'float32'))
+  mod['main'] = relay.Function([x], x)
+
+  mod = transform.LazyGradientInit()(mod)
+  mod = transform.InferType()(mod)
+
+  
 if __name__ == "__main__":
-  pytest.main([__file__])
+  prelude()
+  # pytest.main([__file__])
