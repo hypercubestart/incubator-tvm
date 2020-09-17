@@ -32,3 +32,4 @@ from .darknet import from_darknet
 from .pytorch import from_pytorch
 from .caffe import from_caffe
 from .change_datatype import ChangeDatatype
+from .tensorflow_parser import TFParser
