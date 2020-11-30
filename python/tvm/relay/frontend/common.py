@@ -24,7 +24,7 @@ import re
 import tvm
 from tvm.ir import IRModule
 from tvm.topi.utils import get_const_tuple
-from tvm.relay import ExprMutator
+from .. import expr_functor as expr_functor
 from .. import expr as _expr
 from .. import function as _function
 from .. import transform as _transform
@@ -603,7 +603,7 @@ class Renamer(object):
             attrs.pop("tvm_custom")
         return get_relay_op(self._new_name)(*inputs, **attrs)
 
-class NormalizeVarNames(ExprMutator):
+class NormalizeVarNames(expr_functor.ExprMutator):
     def __init__(self, mod):
         super().__init__()
         self.mod = mod
