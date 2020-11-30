@@ -19,11 +19,12 @@
 from __future__ import absolute_import as _abs
 import logging
 import numpy as np
+import re
 
 import tvm
 from tvm.ir import IRModule
 from tvm.topi.utils import get_const_tuple
-
+from tvm.relay import ExprMutator
 from .. import expr as _expr
 from .. import function as _function
 from .. import transform as _transform
@@ -601,3 +602,17 @@ class Renamer(object):
         if "tvm_custom" in attrs:
             attrs.pop("tvm_custom")
         return get_relay_op(self._new_name)(*inputs, **attrs)
+
+class NormalizeVarNames(ExprMutator):
+    def __init__(self, mod):
+        super().__init__()
+        self.mod = mod
+        self.var_map = {}
+    
+    def visit_var(self, var):
+        if var in self.var_map:
+            return self.var_map[var]
+        new_name = re.sub('r[:/-,.]', '_', var.name_hint)
+        new_var = _expr.Var(new_name, var.type_annotation)
+        self.var_map[var] = new_var
+        return new_var
