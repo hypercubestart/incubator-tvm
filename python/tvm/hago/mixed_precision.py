@@ -60,7 +60,7 @@ class RandomSingleMPTuner(Tuner):
   Should be initialized with best bit configuration for int16 activation
   """
   def __init__(self, space, objective, bits, max_trials):
-    super(RandomMPTuner, self).__init__(space, objective, max_trials)
+    super(RandomSingleMPTuner, self).__init__(space, objective, max_trials)
 
     self.bits = bits
   def has_next(self):
