@@ -32,7 +32,7 @@ class RandomMPTuner(Tuner):
     # each index is 1 = self.p
     drop_indices = np.random.binomial(1, self.p, (len(self.bits, )))
     mask_array = np.ma.array(self.bits, mask=drop_indices)
-    return [mask_array.filled(fill_value = 4)]
+    return [mask_array.filled(fill_value = 4).tolist()]
 
   def update(self, measures):
     self._update_best_measure(measures)
