@@ -103,27 +103,47 @@ class GreedyMPTuner(Tuner):
   Should be initialized with best bit configuration for int16 activation
   """
   def __init__(self, space, objective, bits, max_trials):
-    super(RandomMPTuner, self).__init__(space, objective, max_trials)
+    super(GreedyMPTuner, self).__init__(space, objective, max_trials)
 
     self.bits = bits
   def has_next(self):
     return True
 
   def next_trials(self):
-    
-    return 
+    trials = []
+    prev_best = self.bits if self.best_measure is None else self.best_measure.strategy.bits
+    for i in range(len(prev_best)):
+      if prev_best[i] != 4:
+        trials.append(prev_best[:i] + [4] + prev_best[i+1:])
+    return trials
 
   def update(self, measures):
+    # only output top 10 measures
     self._update_best_measure(measures)
 
   def _update_best_measure(self, measures):
-    from .common_utils import best_measure
+    from .record import best_measure
     self.best_measure = best_measure(measures, self.measure_kind)
 
     # print('measures')
     # for m in measures:
     #     print(m)
-    # print('best_measure')
+    print('best_measure')
     print(self.best_measure)
     return self.best_measure
+
+def _write_to_file(self, fout, measures):
+  def compare_key(m):
+    key = MeasureKind.enum_to_str('accuracy')
+    attr = getattr(m.result, key)
+    # percentage of accuracy retained from int16-activation quantization - percentage of (sum of bits) from int16 activation
+    # TODO: better weighted sum
+    return attr
+  temp = sorted(measures, key=compare_key, reverse=True)
+  # print top 10
+  from .record import serialize
+  for m in temp[:10]:
+    fout.write(serialize(m))
+    fout.write('\n')
+
 
