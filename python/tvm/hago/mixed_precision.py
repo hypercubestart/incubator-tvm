@@ -72,9 +72,10 @@ class RandomSingleMPTuner(Tuner):
     else:
       bits = self.best_measure.strategy.bits
     trials = []
-    for _ in range(10):
+    for _ in range(20):
       i = np.random.randint(0, len(self.bits))
       trials.append(self.bits[0:i] + [4] + self.bits[i + 1:])
+    return trials
 
   def update(self, measures):
     self._update_best_measure(measures)
