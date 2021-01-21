@@ -118,7 +118,6 @@ class GreedyMPTuner(Tuner):
     return trials
 
   def update(self, measures):
-    # only output top 10 measures
     self._update_best_measure(measures)
 
   def _update_best_measure(self, measures):
@@ -132,55 +131,39 @@ class GreedyMPTuner(Tuner):
     print(self.best_measure)
     return self.best_measure
 
-  def _measure(self, bits_list):
-    from . import quantize as qtz
-    from .. import relay
-    from .threshold import threshold_estimate
-    from .record import Strategy, Measure
-    result = []
-    for bits in bits_list:
-      thresholds = threshold_estimate(self.graph, self.topology, self.stats, bits)
-      quantizer = qtz.Quantizer(self.graph, self.hardware, self.topology, bits, thresholds)
-      sgraph = quantizer.simulate()
-      qgraph = quantizer.quantize()
-      # print('original graph')
-      # print(self.graph)
-      # print('simulated graph')
-      # print(sgraph)
-      # print('quantized graph')
-      # print(qgraph)
-      # lowered_qgraph = relay.qnn.transform.CanonicalizeOps()(tvm.IRModule.from_expr(qgraph))
-      # print('lowered quantized graph')
-      # print(lowered_qgraph)
-      # raise ValueError
+  def tune(self, graph, hardware, dataset, ctx, target, fout=None):
+    import tvm
+    from .topology import analyze_topology
+    from . import analysis 
 
-      runtime = relay.create_executor("graph", ctx=self.ctx, target=self.target).evaluate(qgraph)
-      input_keys = [str(param.name_hint) for param in qgraph.params]
-      outputs = []
-      for batch_id, batch in enumerate(self.dataset):
-          inputs = {}
-          for key in input_keys:
-              assert key in batch
-              inputs[key] = batch[key]
-          out = runtime(**inputs)
-          outputs.append(out)
-      measure_result = self.measure_func(self.graph, self.dataset, outputs, self.ctx, self.target)
-      strategy = Strategy(self.model_hash, bits, thresholds)
-      result.append(Measure(strategy, measure_result))
-    return result
+    self.graph = graph
+    self.hardware = hardware
+    self.model_hash = tvm.ir.structural_hash(graph)
+    self.dataset = dataset
+    self.ctx = ctx
+    self.target = target
+    self.topology = analyze_topology(graph, hardware)
+    self.stats = analysis.collect_stats(graph, self.topology,
+        dataset, ctx, target)
 
-  # def _write_to_file(self, fout, measures):
-  #   def compare_key(m):
-  #     key = MeasureKind.enum_to_str('accuracy')
-  #     attr = getattr(m.result, key)
-  #     # percentage of accuracy retained from int16-activation quantization - percentage of (sum of bits) from int16 activation
-  #     # TODO: better weighted sum
-  #     return attr
-  #   temp = sorted(measures, key=compare_key, reverse=True)
-  #   # print top 10
-  #   from .record import serialize
-  #   for m in temp[:10]:
-  #     fout.write(serialize(m))
-  #     fout.write('\n')
+    num_trials = 0
+    while num_trials < self.max_trials:
+        if not self.has_next():
+            break
+
+        trials = self.next_trials()
+        measures = self._measure(trials)
+        self.update(measures)
+
+        if fout is not None:
+            self._write_to_file(fout, measures)
+        num_trials += 1
+    return self.best_measure
+
+  def _write_to_file(self, fout, measures):
+    # only write best measure
+    from .record import serialize
+    fout.write(serialize(self.best_measure))
+    fout.write('\n')
 
 
