@@ -269,38 +269,38 @@ class Tuner(object):
         print('best_measure')
         print(self.best_measure)
         return self.best_measure
-        
+
     def _measure(self, bits_list):
         result = []
         for bits in bits_list:
-        thresholds = threshold_estimate(self.graph, self.topology, self.stats, bits)
-        quantizer = qtz.Quantizer(self.graph, self.hardware, self.topology, bits, thresholds)
-        sgraph = quantizer.simulate()
-        qgraph = quantizer.quantize()
-        # print('original graph')
-        # print(self.graph)
-        # print('simulated graph')
-        # print(sgraph)
-        # print('quantized graph')
-        # print(qgraph)
-        # lowered_qgraph = relay.qnn.transform.CanonicalizeOps()(tvm.IRModule.from_expr(qgraph))
-        # print('lowered quantized graph')
-        # print(lowered_qgraph)
-        # raise ValueError
+            thresholds = threshold_estimate(self.graph, self.topology, self.stats, bits)
+            quantizer = qtz.Quantizer(self.graph, self.hardware, self.topology, bits, thresholds)
+            sgraph = quantizer.simulate()
+            qgraph = quantizer.quantize()
+            # print('original graph')
+            # print(self.graph)
+            # print('simulated graph')
+            # print(sgraph)
+            # print('quantized graph')
+            # print(qgraph)
+            # lowered_qgraph = relay.qnn.transform.CanonicalizeOps()(tvm.IRModule.from_expr(qgraph))
+            # print('lowered quantized graph')
+            # print(lowered_qgraph)
+            # raise ValueError
 
-        runtime = relay.create_executor("graph", ctx=self.ctx, target=self.target).evaluate(qgraph)
-        input_keys = [str(param.name_hint) for param in qgraph.params]
-        outputs = []
-        for batch_id, batch in enumerate(self.dataset):
-            inputs = {}
-            for key in input_keys:
-                assert key in batch
-                inputs[key] = batch[key]
-            out = runtime(**inputs)
-            outputs.append(out)
-        measure_result = self.measure_func(self.graph, self.dataset, outputs, self.ctx, self.target)
-        strategy = Strategy(self.model_hash, bits, thresholds)
-        result.append(Measure(strategy, measure_result))
+            runtime = relay.create_executor("graph", ctx=self.ctx, target=self.target).evaluate(qgraph)
+            input_keys = [str(param.name_hint) for param in qgraph.params]
+            outputs = []
+            for batch_id, batch in enumerate(self.dataset):
+                inputs = {}
+                for key in input_keys:
+                    assert key in batch
+                    inputs[key] = batch[key]
+                out = runtime(**inputs)
+                outputs.append(out)
+            measure_result = self.measure_func(self.graph, self.dataset, outputs, self.ctx, self.target)
+            strategy = Strategy(self.model_hash, bits, thresholds)
+            result.append(Measure(strategy, measure_result))
         return result
 
     # def _measure(self, bits_list):
