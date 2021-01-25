@@ -359,12 +359,15 @@ class RandomSearchTuner(Tuner):
 
 
 class GreedySearchTuner(Tuner):
-    def __init__(self, space, objective, max_trials=None):
+    def __init__(self, space, objective, max_trials=None, bits=None):
         super(GreedySearchTuner, self).__init__(space, objective, max_trials)
         self.dim_idx = 0
         self.bit_idx = 0
         self.decided = []
         self.default = [choices[0] for choices in space]
+        self.bits = bits
+        if self.bits is not None:
+            self.bit_idx = self.space[self.dim_idx].index(self.bits[0])
 
     def has_next(self):
         return self.dim_idx < len(self.space)
@@ -384,6 +387,9 @@ class GreedySearchTuner(Tuner):
             self.decided.append(best_bit)
             self.dim_idx += 1
             self.bit_idx = 0
+
+            if self.bits is not None:
+                self.bit_idx = self.space[self.dim_idx].index(self.bits[0])
 
     def _measure(self, bits_list):
         assert len(bits_list) == 1

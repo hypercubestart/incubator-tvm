@@ -87,7 +87,7 @@ def quantize_hago(mod, params, calib_dataset,
         elif tuner == 'greedy':
             tuner = hago.GreedySearchTuner(space, "accuracy")
         elif tuner == 'batched':
-            tuner = hago.BatchedGreedySearchTuner(space, "accuracy")
+            tuner = hago.BatchedGreedySearchTuner(space, "accuracy", bits)
         elif tuner == 'greedymp':
             from tvm.hago.mixed_precision import GreedyMPTuner, RandomMPTuner, RandomSingleMPTuner
             tuner = GreedyMPTuner(space, 'accuracy', bits, 40)
