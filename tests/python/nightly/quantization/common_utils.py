@@ -69,7 +69,7 @@ def eval_acc(func, dataset, batch_fn, args, var_name, target='cuda', ctx=tvm.gpu
 #################
 def quantize_hago(mod, params, calib_dataset,
                   qconfig=None, hardware=None, tuner=None,
-                  target="llvm", ctx=tvm.cpu(), eval_only=False):
+                  target="llvm", ctx=tvm.cpu(), eval_only=False, bits=None):
     if qconfig is None:
         qconfig = hago.qconfig(log_file='temp.log')
     if hardware is None:
@@ -88,6 +88,9 @@ def quantize_hago(mod, params, calib_dataset,
             tuner = hago.GreedySearchTuner(space, "accuracy")
         elif tuner == 'batched':
             tuner = hago.BatchedGreedySearchTuner(space, "accuracy")
+        elif tuner == 'greedymp':
+            from tvm.hago.mixed_precision import GreedyMPTuner, RandomMPTuner, RandomSingleMPTuner
+            tuner = GreedyMPTuner(space, 'accuracy', bits, 40)
 
         if eval_only:
             record = hago.pick_best(qconfig.log_file, "accuracy")
