@@ -368,6 +368,7 @@ class GreedySearchTuner(Tuner):
         self.bits = bits
         if self.bits is not None:
             self.bit_idx = self.space[self.dim_idx].index(self.bits[0])
+            self.default = self.bits
 
     def has_next(self):
         return self.dim_idx < len(self.space)
@@ -388,7 +389,7 @@ class GreedySearchTuner(Tuner):
             self.dim_idx += 1
             self.bit_idx = 0
 
-            if self.bits is not None:
+            if self.bits is not None and self.dim_idx < len(self.space):
                 self.bit_idx = self.space[self.dim_idx].index(self.bits[0])
 
     def _measure(self, bits_list):
