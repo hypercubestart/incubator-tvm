@@ -499,7 +499,7 @@ def list_ops(graph):
     relay.analysis.post_order_visit(graph, fvisit)
     return ops
 
-def search_quantize_strategy(graph, hardware, dataset, tuner, ctx, target):
+def search_quantize_strategy(graph, hardware, dataset, tuner, ctx, target, validation_dataset=None):
     assert isinstance(graph, relay.Function)
     assert isinstance(dataset, qtz.CalibrationDataset)
     print('ops in graph:')
@@ -511,5 +511,5 @@ def search_quantize_strategy(graph, hardware, dataset, tuner, ctx, target):
     print('original acc: {}'.format(origin_acc))
 
     with open(qconfig.log_file, 'w+', buffering=1) as fout:
-        measure = tuner.tune(graph, hardware, dataset, ctx, target, fout)
+        measure = tuner.tune(graph, hardware, dataset, ctx, target, fout, validation_dataset=validation_dataset)
     return measure.strategy, measure.result

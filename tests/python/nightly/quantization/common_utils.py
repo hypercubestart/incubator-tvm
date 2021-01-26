@@ -83,7 +83,8 @@ def eval_acc(func, dataset, batch_fn, args, var_name, target='cuda', ctx=tvm.gpu
 #################
 def quantize_hago(mod, params, calib_dataset,
                   qconfig=None, hardware=None, tuner=None,
-                  target="llvm", ctx=tvm.cpu(), eval_only=False, bits=None, max_trials=None):
+                  target="llvm", ctx=tvm.cpu(), eval_only=False, bits=None, max_trials=None,
+                  validation_dataset=None):
     if qconfig is None:
         qconfig = hago.qconfig(log_file='temp.log')
     if hardware is None:
@@ -111,7 +112,7 @@ def quantize_hago(mod, params, calib_dataset,
             print(record)
             raise ValueError
         else:
-            strategy, result = hago.search_quantize_strategy(graph, hardware, calib_dataset, tuner, ctx, target)
+            strategy, result = hago.search_quantize_strategy(graph, hardware, calib_dataset, tuner, ctx, target, validation_dataset=validation_dataset)
         print('strategy')
         print(strategy)
 
