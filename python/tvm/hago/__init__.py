@@ -25,6 +25,6 @@ from .hardware import Hardware, OpDesc, create_accelerator_description
 from .search import generate_search_space, search_quantize_strategy
 from .search import DefaultSetting, RandomSearchTuner, GreedySearchTuner, BatchedGreedySearchTuner
 from .search import serialize, deserialize
-from .quantize import CalibrationDataset, prerequisite_optimize, create_quantizer
+from .quantize import CalibrationDataset, ValidationDataset, prerequisite_optimize, create_quantizer
 from .record import serialize, deserialize, load_from_file, pick_best
 from .mixed_precision import RandomMPTuner
