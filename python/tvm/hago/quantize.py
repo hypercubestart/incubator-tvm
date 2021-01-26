@@ -159,6 +159,21 @@ class CalibrationDataset(object):
         self._counter += 1
         return ret
 
+class ValidationDataset(object):
+    def __init__(self, batches):
+        assert isinstance(batches, list) and isinstance(batches[0], dict)
+        self.batches = batches
+
+    def __iter__(self):
+        self._counter = 0
+        return self
+
+    def __next__(self):
+        if self._counter >= len(self.batches):
+            raise StopIteration
+        ret = self.batches[self._counter]
+        self._counter += 1
+        return ret
 
 def prerequisite_optimize(func, params=None):
     """ Prerequisite optimization passes for quantization. Perform

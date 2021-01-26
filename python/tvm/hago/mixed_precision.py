@@ -131,7 +131,7 @@ class GreedyMPTuner(Tuner):
     print(self.best_measure)
     return self.best_measure
 
-  def tune(self, graph, hardware, dataset, ctx, target, fout=None):
+  def tune(self, graph, hardware, dataset, ctx, target, fout=None, validation_dataset=None):
     import tvm
     from .topology import analyze_topology
     from . import analysis 
@@ -140,6 +140,7 @@ class GreedyMPTuner(Tuner):
     self.hardware = hardware
     self.model_hash = tvm.ir.structural_hash(graph)
     self.dataset = dataset
+    self.validation_dataset = validation_dataset
     self.ctx = ctx
     self.target = target
     self.topology = analyze_topology(graph, hardware)

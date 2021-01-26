@@ -1,0 +1,112 @@
+# dune utop
+# OCAMLPARAM: unset
+# Workspace root: /Users/andrewliu/Projects/tvm/tvm
+$ /usr/local/bin/nproc > /var/folders/1v/b01xfw5d55b349p6xy0r7mt40000gn/T/dunef752da.output 2> /dev/null
+# Auto-detected concurrency: 8
+# disable binary cache
+$ /Users/andrewliu/.opam/default/bin/ocamlc.opt -config > /var/folders/1v/b01xfw5d55b349p6xy0r7mt40000gn/T/dunef7287e.output
+# Dune context:
+#  { name = "default"
+#  ; kind = "default"
+#  ; profile = Dyn
+#  ; merlin = true
+#  ; for_host = None
+#  ; fdo_target_exe = None
+#  ; build_dir = "default"
+#  ; toplevel_path =
+#      Some External "/Users/andrewliu/.opam/default/lib/toplevel"
+#  ; ocaml_bin = External "/Users/andrewliu/.opam/default/bin"
+#  ; ocaml = Ok External "/Users/andrewliu/.opam/default/bin/ocaml"
+#  ; ocamlc = External "/Users/andrewliu/.opam/default/bin/ocamlc.opt"
+#  ; ocamlopt = Ok External "/Users/andrewliu/.opam/default/bin/ocamlopt.opt"
+#  ; ocamldep = Ok External "/Users/andrewliu/.opam/default/bin/ocamldep.opt"
+#  ; ocamlmklib =
+#      Ok External "/Users/andrewliu/.opam/default/bin/ocamlmklib.opt"
+#  ; env =
+#      map
+#        { "INSIDE_DUNE" : "/Users/andrewliu/Projects/tvm/tvm/_build/default"
+#        ; "MANPATH" :
+#            "/Users/andrewliu/Projects/tvm/tvm/_build/install/default/bin"
+#        ; "OCAMLFIND_IGNORE_DUPS_IN" :
+#            "/Users/andrewliu/Projects/tvm/tvm/_build/install/default/lib"
+#        ; "OCAMLPATH" :
+#            "/Users/andrewliu/Projects/tvm/tvm/_build/install/default/lib"
+#        ; "OCAMLTOP_INCLUDE_PATH" :
+#            "/Users/andrewliu/Projects/tvm/tvm/_build/install/default/lib/toplevel"
+#        ; "OCAML_COLOR" : "always"
+#        ; "OPAMCOLOR" : "always"
+#        }
+#  ; findlib_path = [ External "/Users/andrewliu/.opam/default/lib" ]
+#  ; arch_sixtyfour = true
+#  ; natdynlink_supported = true
+#  ; supports_shared_libraries = true
+#  ; ocaml_config =
+#      { version = "4.11.1"
+#      ; standard_library_default = "/Users/andrewliu/.opam/default/lib/ocaml"
+#      ; standard_library = "/Users/andrewliu/.opam/default/lib/ocaml"
+#      ; standard_runtime = "the_standard_runtime_variable_was_deleted"
+#      ; ccomp_type = "cc"
+#      ; c_compiler = "cc"
+#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
+#      ; ocamlc_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
+#      ; ocamlopt_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
+#      ; ocamlopt_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
+#      ; bytecomp_c_compiler =
+#          [ "cc"
+#          ; "-O2"
+#          ; "-fno-strict-aliasing"
+#          ; "-fwrapv"
+#          ; "-D_FILE_OFFSET_BITS=64"
+#          ; "-D_REENTRANT"
+#          ]
+#      ; bytecomp_c_libraries = [ "-lm"; "-lpthread" ]
+#      ; native_c_compiler =
+#          [ "cc"
+#          ; "-O2"
+#          ; "-fno-strict-aliasing"
+#          ; "-fwrapv"
+#          ; "-D_FILE_OFFSET_BITS=64"
+#          ; "-D_REENTRANT"
+#          ]
+#      ; native_c_libraries = [ "-lm" ]
+#      ; cc_profile = []
+#      ; architecture = "amd64"
+#      ; model = "default"
+#      ; int_size = 63
+#      ; word_size = 64
+#      ; system = "macosx"
+#      ; asm = [ "clang"; "-arch"; "x86_64"; "-Wno-trigraphs"; "-c" ]
+#      ; asm_cfi_supported = true
+#      ; with_frame_pointers = false
+#      ; ext_exe = ""
+#      ; ext_obj = ".o"
+#      ; ext_asm = ".s"
+#      ; ext_lib = ".a"
+#      ; ext_dll = ".so"
+#      ; os_type = "Unix"
+#      ; default_executable_name = "a.out"
+#      ; systhread_supported = true
+#      ; host = "x86_64-apple-darwin17.7.0"
+#      ; target = "x86_64-apple-darwin17.7.0"
+#      ; profiling = false
+#      ; flambda = false
+#      ; spacetime = false
+#      ; safe_string = true
+#      ; exec_magic_number = "Caml1999X028"
+#      ; cmi_magic_number = "Caml1999I028"
+#      ; cmo_magic_number = "Caml1999O028"
+#      ; cma_magic_number = "Caml1999A028"
+#      ; cmx_magic_number = "Caml1999Y028"
+#      ; cmxa_magic_number = "Caml1999Z028"
+#      ; ast_impl_magic_number = "Caml1999M028"
+#      ; ast_intf_magic_number = "Caml1999N028"
+#      ; cmxs_magic_number = "Caml1999D028"
+#      ; cmt_magic_number = "Caml1999T028"
+#      ; natdynlink_supported = true
+#      ; supports_shared_libraries = true
+#      ; windows_unicode = false
+#      }
+#  }
+$ (cd _build/default && /Users/andrewliu/.opam/default/bin/ocamldep.opt -modules -impl .utop/utop.ml-gen) > _build/default/.utop/.utop.eobjs/utop.ml-gen.d
+$ (cd _build/default && /Users/andrewliu/.opam/default/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -24 -g -bin-annot -I .utop/.utop.eobjs/byte -I /Users/andrewliu/.opam/default/lib/bytes -I /Users/andrewliu/.opam/default/lib/camomile -I /Users/andrewliu/.opam/default/lib/camomile/default_config -I /Users/andrewliu/.opam/default/lib/camomile/dyn -I /Users/andrewliu/.opam/default/lib/camomile/lib_default -I /Users/andrewliu/.opam/default/lib/camomile/library -I /Users/andrewliu/.opam/default/lib/charInfo_width -I /Users/andrewliu/.opam/default/lib/findlib -I /Users/andrewliu/.opam/default/lib/lambda-term -I /Users/andrewliu/.opam/default/lib/lwt -I /Users/andrewliu/.opam/default/lib/lwt/unix -I /Users/andrewliu/.opam/default/lib/lwt_log -I /Users/andrewliu/.opam/default/lib/lwt_log/core -I /Users/andrewliu/.opam/default/lib/lwt_react -I /Users/andrewliu/.opam/default/lib/mew -I /Users/andrewliu/.opam/default/lib/mew_vi -I /Users/andrewliu/.opam/default/lib/mmap -I /Users/andrewliu/.opam/default/lib/ocaml/compiler-libs -I /Users/andrewliu/.opam/default/lib/ocaml/threads -I /Users/andrewliu/.opam/default/lib/ocplib-endian -I /Users/andrewliu/.opam/default/lib/ocplib-endian/bigstring -I /Users/andrewliu/.opam/default/lib/react -I /Users/andrewliu/.opam/default/lib/result -I /Users/andrewliu/.opam/default/lib/seq -I /Users/andrewliu/.opam/default/lib/trie -I /Users/andrewliu/.opam/default/lib/utop -I /Users/andrewliu/.opam/default/lib/zed -no-alias-deps -o .utop/.utop.eobjs/byte/dune__exe__Utop.cmo -c -impl .utop/utop.ml-gen)
+$ (cd _build/default && /Users/andrewliu/.opam/default/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -24 -g -o .utop/utop.exe -output-complete-exe /Users/andrewliu/.opam/default/lib/ocaml/compiler-libs/ocamlcommon.cma /Users/andrewliu/.opam/default/lib/ocaml/compiler-libs/ocamlbytecomp.cma /Users/andrewliu/.opam/default/lib/ocaml/compiler-libs/ocamltoplevel.cma /Users/andrewliu/.opam/default/lib/findlib/findlib.cma /Users/andrewliu/.opam/default/lib/findlib/findlib_top.cma /Users/andrewliu/.opam/default/lib/result/result.cma /Users/andrewliu/.opam/default/lib/lwt/lwt.cma /Users/andrewliu/.opam/default/lib/ocaml/unix.cma -I /Users/andrewliu/.opam/default/lib/ocaml /Users/andrewliu/.opam/default/lib/ocaml/bigarray.cma -I /Users/andrewliu/.opam/default/lib/ocaml /Users/andrewliu/.opam/default/lib/mmap/mmap.cma /Users/andrewliu/.opam/default/lib/ocplib-endian/ocplib_endian.cma /Users/andrewliu/.opam/default/lib/ocplib-endian/bigstring/ocplib_endian_bigstring.cma /Users/andrewliu/.opam/default/lib/ocaml/threads/threads.cma -I /Users/andrewliu/.opam/default/lib/ocaml /Users/andrewliu/.opam/default/lib/lwt/unix/lwt_unix.cma -I /Users/andrewliu/.opam/default/lib/lwt/unix /Users/andrewliu/.opam/default/lib/react/react.cma /Users/andrewliu/.opam/default/lib/lwt_react/lwt_react.cma /Users/andrewliu/.opam/default/lib/camomile/default_config/camomileDefaultConfig.cma /Users/andrewliu/.opam/default/lib/camomile/library/camomileLibrary.cma /Users/andrewliu/.opam/default/lib/camomile/lib_default/camomileLibraryDefault.cma /Users/andrewliu/.opam/default/lib/camomile/dyn/camomileLibraryDyn.cma /Users/andrewliu/.opam/default/lib/camomile/camomile_yuge.cma /Users/andrewliu/.opam/default/lib/charInfo_width/charInfo_width.cma /Users/andrewliu/.opam/default/lib/zed/zed.cma /Users/andrewliu/.opam/default/lib/lwt_log/core/lwt_log_core.cma /Users/andrewliu/.opam/default/lib/lwt_log/lwt_log.cma /Users/andrewliu/.opam/default/lib/trie/trie.cma /Users/andrewliu/.opam/default/lib/mew/mew.cma /Users/andrewliu/.opam/default/lib/mew_vi/mew_vi.cma /Users/andrewliu/.opam/default/lib/lambda-term/lambda_term.cma -I /Users/andrewliu/.opam/default/lib/lambda-term /Users/andrewliu/.opam/default/lib/utop/uTop.cma .utop/.utop.eobjs/byte/dune__exe__Utop.cmo -linkall -warn-error -31)

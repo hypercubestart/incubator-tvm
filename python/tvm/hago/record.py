@@ -39,9 +39,10 @@ class MeasureKind(object):
 
 # TODO(ziheng): consider multiple measure metric in the future: latency, energy, etc 
 class MeasureResult(object):
-    def __init__(self, accuracy=None, kl_distance=None):
+    def __init__(self, accuracy=None, kl_distance=None, validation_acc=None):
         self.accuracy = accuracy
         self.kl_distance = kl_distance
+        self.validation_acc = validation_acc
 
     def to_json(self):
         json_dict = self.__dict__.copy()

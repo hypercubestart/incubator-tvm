@@ -17,6 +17,20 @@ def get_calibration_dataset(dataset, batch_fn, var_name, num_samples=100):
                         'label': tvm.nd.array(label[0].asnumpy())})
     return hago.CalibrationDataset(batches)
 
+def get_validation_dataset(dataset, batch_fn, var_name, offset=100, num_samples=100):
+    dataset.reset()
+    batches = []
+    j = 0
+    for i, batch in enumerate(dataset):
+        if i * dataset.batch_size <= offset:
+            continue
+        if j * dataset.batch_size > num_samples:
+            break
+        data, label = batch_fn(batch, [mx.cpu(0)])
+        batches.append({var_name: tvm.nd.array(data[0].asnumpy()),
+                        'label': tvm.nd.array(label[0].asnumpy())})
+        j = j + 1
+    return hago.ValidationDataset(batches)
 
 ##################
 # Evaluation infra

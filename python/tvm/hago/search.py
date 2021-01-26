@@ -227,6 +227,7 @@ class Tuner(object):
     def tune(self, graph, hardware, dataset, ctx, target, fout=None):
         self.graph = graph
         self.hardware = hardware
+        self.validation_dataset = None
         self.model_hash = tvm.ir.structural_hash(graph)
         self.dataset = dataset
         self.ctx = ctx
@@ -271,6 +272,9 @@ class Tuner(object):
         return self.best_measure
 
     def _measure(self, bits_list):
+        if self.validation_dataset is not None:
+            return self._measure_with_validation(bits_list)
+
         result = []
         for bits in bits_list:
             thresholds = threshold_estimate(self.graph, self.topology, self.stats, bits)
@@ -299,6 +303,44 @@ class Tuner(object):
                 out = runtime(**inputs)
                 outputs.append(out)
             measure_result = self.measure_func(self.graph, self.dataset, outputs, self.ctx, self.target)
+            strategy = Strategy(self.model_hash, bits, thresholds)
+            result.append(Measure(strategy, measure_result))
+        return result
+    
+    def _measure_with_validation(self, bits_list):
+        result = []
+        for bits in bits_list:
+            thresholds = threshold_estimate(self.graph, self.topology, self.stats, bits)
+            quantizer = qtz.Quantizer(self.graph, self.hardware, self.topology, bits, thresholds)
+            sgraph = quantizer.simulate()
+            qgraph = quantizer.quantize()
+            # print('original graph')
+            # print(self.graph)
+            # print('simulated graph')
+            # print(sgraph)
+            # print('quantized graph')
+            # print(qgraph)
+            # lowered_qgraph = relay.qnn.transform.CanonicalizeOps()(tvm.IRModule.from_expr(qgraph))
+            # print('lowered quantized graph')
+            # print(lowered_qgraph)
+            # raise ValueError
+
+            def get_measure_result(d):
+                runtime = relay.create_executor("graph", ctx=self.ctx, target=self.target).evaluate(qgraph)
+                input_keys = [str(param.name_hint) for param in qgraph.params]
+                outputs = []
+                for batch_id, batch in enumerate(d):
+                    inputs = {}
+                    for key in input_keys:
+                        assert key in batch
+                        inputs[key] = batch[key]
+                    out = runtime(**inputs)
+                    outputs.append(out)
+                return self.measure_func(self.graph, d, outputs, self.ctx, self.target)
+
+            calib_measure = get_measure_result(self.dataset)
+            valid_measure = get_measure_result(self.validation_dataset)
+            measure_result = MeasureResult(accuracy=calib_measure.accuracy, validation_acc=valid_measure.accuracy)
             strategy = Strategy(self.model_hash, bits, thresholds)
             result.append(Measure(strategy, measure_result))
         return result
