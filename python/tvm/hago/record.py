@@ -98,7 +98,8 @@ def deserialize(json_str):
     def decode_result(obj):
         accuracy = obj['accuracy']
         kl_distance = obj['kl_distance']
-        return MeasureResult(accuracy, kl_distance)
+        validation_acc = obj['validation_acc']
+        return MeasureResult(accuracy, kl_distance, validation_acc=validation_acc)
     
     json_data = json.loads(json_str)
     strategy = decode_strategy(json_data['strategy'])
