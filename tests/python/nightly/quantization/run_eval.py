@@ -13,14 +13,15 @@ from common_utils import *
 
 # run entire evaluation for every model strategy in log file
 parser = argparse.ArgumentParser()
-parser.add_argument("log_file", default="resnet18_v1", help="model to quantize")
+parser.add_argument("--soundness_check", default=False, action='store_true')
+parser.add_argument("--log_file", default="logfile", help="log file with all strategy to eval")
 args = parser.parse_args()
 
 batch_size = 32
-target = 'llvm -mcpu=core-avx2'
+# target = 'llvm -mcpu=core-avx2'
 # ctx = tvm.context(target)
-# target = 'cuda'
-# ctx = tvm.gpu()
+target = 'cuda'
+ctx = tvm.gpu()
 # best configuration for resnet18_v1
 resnet18_bits = [6, 7, 16, 14, 4, 16, 7, 7, 16, 14, 4, 8, 8, 16, 13, 15, 16, 4, 7, 8, 16, 12, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 15, 14, 8, 8, 16, 14, 4, 6, 8, 15, 13, 16, 16, 4, 8, 8, 16, 15, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 16, 15, 8, 8, 16, 14, 4, 8, 7, 13, 11, 15, 16, 4, 7, 8, 14, 12, 4, 8, 8, 11, 9, 16, 14, 4, 7, 8, 15, 14, 8, 8, 16, 11, 4, 7, 8, 14, 11, 12, 11, 4, 8, 8, 12, 9, 4, 7, 8, 12, 9, 6, 7, 5]
 
@@ -89,16 +90,17 @@ def get_model(model_name):
 def main():
     is_per_channel = False
     # val_path = '/home/ubuntu/tensorflow_datasets/downloads/manual/imagenet2012/val.rec'
-    val_path = '/home/ziheng/datasets1/imagenet/rec/val.rec'
+    val_path = '/home/andy99/.mxnet/datasets/imagenet/rec/val.rec'
     model_name = 'resnet18_v1'
     img_size = 224
     val_data, batch_fn = get_val_data(img_size, val_path, batch_size)
 
-    records = hago.load_from_file(parser.log_file)
+    records = hago.load_from_file(args.log_file)
 
-    with open(f'{parser.log_file}_evaluation.log', w) as f:
+    with open(f'/home/andy99/logs/mixed_precision/eval/strategy_resnet18_v1_greedy_1-29edges_1000calib_evaluation.log', 'a') as f:
         for r in records:
-            graph, params = get_model(model_name)
+            mod, params = get_model(model_name)
+            graph = hago.prerequisite_optimize(mod['main'], params=params)
             strategy = r.strategy
             # print(fp32_mod)
 
@@ -108,12 +110,13 @@ def main():
             quantized_graph = quantizer.quantize()
             lowered_quantized_graph = relay.qnn.transform.CanonicalizeOps()(tvm.IRModule.from_expr(quantized_graph))
             # hago.inspect_graph_statistic(graph, hardware, strategy, dataset, ctx, target='llvm')
-            quantized_func tvm.IRModule.from_expr(quantized_graph)
+            quantized_func = tvm.IRModule.from_expr(quantized_graph)
             acc = eval_acc(quantized_func, val_data, batch_fn, args, var_name='data', target=target, ctx=ctx)
             channel_or_tensor = "per_channel" if is_per_channel else "per_tensor"
             print("quantized_accuracy", model_name, channel_or_tensor, acc, sep=',')
-            f.write(acc)
+            f.write(str(acc))
             f.write('\n')
+            f.flush()
 
 if __name__ == '__main__':
     main()
