@@ -224,7 +224,7 @@ class Tuner(object):
     def update(self, measures):
         pass
 
-    def tune(self, graph, hardware, dataset, ctx, target, fout=None):
+    def tune(self, graph, hardware, dataset, ctx, target, fout=None, validation_dataset=None):
         self.graph = graph
         self.hardware = hardware
         self.validation_dataset = None
@@ -401,7 +401,7 @@ class RandomSearchTuner(Tuner):
 
 
 class GreedySearchTuner(Tuner):
-    def __init__(self, space, objective, max_trials=None, bits=None):
+    def __init__(self, space, objective, max_trials=None, bits=None, validation_dataset=None):
         super(GreedySearchTuner, self).__init__(space, objective, max_trials)
         self.dim_idx = 0
         self.bit_idx = 0
