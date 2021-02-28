@@ -109,6 +109,8 @@ def quantize_hago(mod, params, calib_dataset,
         elif tuner == 'greedymp':
             from tvm.hago.mixed_precision import GreedyMPTuner, RandomMPTuner, RandomSingleMPTuner
             tuner = GreedyMPTuner(space, 'accuracy', bits, 1)
+        elif tuner == 'groupedgreedy':
+            tuner = GroupedGreedyTuner(space, 'accuracy', max_trials=max_trials)
 
         if eval_only:
             record = hago.pick_best(qconfig.log_file, "accuracy")

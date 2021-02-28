@@ -31,7 +31,17 @@ class NodeKind:
 
 class SearchSpace(object):
     def __init__(self, topology):
-        self.topology = topology
+        self._search_space = topology.generate_search_space()
+        self._groups = topology.group_bits()
+        self._topology = topology
+    
+    @property
+    def groups(self):
+        return self._groups
+
+    @property
+    def search_space(self):
+        return self._search_space
 
 class Topology(object):
     def __init__(self, graph):

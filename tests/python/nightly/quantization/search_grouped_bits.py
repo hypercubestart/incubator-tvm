@@ -122,10 +122,10 @@ def main():
                                log_file='/home/andy99/logs/test.log')
                                #log_file='/home/andy99/logs/mixed_precision/strategy_{}_greedy_1-1edges.log'.format(model_name))
         
-        max_trials = None
+        max_trials = 20
         hardware = create_hardware()
         validation_dataset = get_validation_dataset(val_data, batch_fn, var_name='data', offset=calib_dataset_size)
-        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, hardware, 'greedy', target, ctx, bits=b, max_trials=max_trials, validation_dataset=validation_dataset)
+        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, hardware, 'groupedgreedy', target, ctx, bits=b, max_trials=max_trials, validation_dataset=validation_dataset)
         acc = eval_acc(quantized_func, val_data, batch_fn, args, var_name='data', target=target, ctx=ctx)
         channel_or_tensor = "per_channel" if is_per_channel else "per_tensor"
         print("quantized_accuracy", model_name, channel_or_tensor, acc, sep=',')
