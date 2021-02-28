@@ -25,7 +25,7 @@ from .. import relay
 from .threshold import threshold_estimate
 from .hardware import *
 from .record import *
-from .topology import Topology, analyze_topology
+from .topology import Topology, analyze_topology, SearchSpace
 from . import analysis
 
 import tvm
@@ -41,8 +41,8 @@ from collections import namedtuple
 
 def generate_search_space(graph, hardware):
     topology = analyze_topology(graph, hardware)
-    return topology.generate_search_space()
-
+    topology.group_bits()
+    return SearchSpace(topology)
 
 ############################################################
 # TODO: old search pipeline, need to move to new tuner API

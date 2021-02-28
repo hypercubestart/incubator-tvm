@@ -29,6 +29,10 @@ class NodeKind:
     Weight = 2
     Activation = 3
 
+class SearchSpace(object):
+    def __init__(topology):
+        self.topology = topology
+
 class Topology(object):
     def __init__(self, graph):
         self.graph = graph
@@ -148,6 +152,25 @@ class Topology(object):
         # edge2choices = complete_dict(choices, topology.edge2cond)
         # print_edge_dict(graph, edge2choices)
         return choices
+    
+    def group_bits(self):
+        edge2idx = self.edge2idx()
+        self.groups = list()
+        def fvisit_analyze(node):
+            if isinstance(node, relay.Call):
+                # print(node.op.name)
+                # print(hardware.list_integer_descs(node))
+                # print(hardware.list_float_descs(node))
+                if not hardware.list_integer_descs(node):
+                    # current op does not support integer computation 
+                    return
+
+                in_edges = list_in_edges(node)
+                group = map(lambda x: self.edge2searchspaceidx(x), in_edges)
+                self.groups.append(group)
+
+        relay.analysis.post_order_visit(self.graph, fvisit_analyze)
+        return self.groups
 
     def infer_scale_shape(self):
         """For per channel scales"""
@@ -290,10 +313,14 @@ class Topology(object):
         ret = OrderedDict()
         cnt = 0
         node2idx = self.node2idx()
+        self.searchspaceidx2edge = OrderedDict()
+        self.edge2searchspaceidx = OrderedDict()
         for key, nidx in node2idx.items():
             val = None
             if self._node_conds[nidx]:
                 val = alist[cnt]
+                self.edge2searchspaceidx[key] = cnt
+                self.searchspaceidx2edge[cnt] = key
                 cnt += 1
             ret[key] = val
         assert cnt == len(alist)
