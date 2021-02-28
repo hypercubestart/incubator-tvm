@@ -41,6 +41,7 @@ from collections import namedtuple
 
 def generate_search_space(graph, hardware):
     topology = analyze_topology(graph, hardware)
+    topology.generate_search_space()
     topology.group_bits()
     return SearchSpace(topology)
 

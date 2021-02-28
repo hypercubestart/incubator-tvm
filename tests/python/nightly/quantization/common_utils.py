@@ -94,7 +94,9 @@ def quantize_hago(mod, params, calib_dataset,
         graph = hago.prerequisite_optimize(mod['main'], params=params)
         logging.debug('current quantize config')
         logging.debug(hago.current_qconfig())
-        space = hago.generate_topology(graph, hardware)
+        space = hago.generate_search_space(graph, hardware)
+        import pdb
+        pdb.set_trace()
         space = SearchSpace(topology)
         if tuner is None:
             tuner = hago.DefaultSetting(space, 'accuracy')

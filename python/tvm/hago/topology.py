@@ -30,7 +30,7 @@ class NodeKind:
     Activation = 3
 
 class SearchSpace(object):
-    def __init__(topology):
+    def __init__(self, topology):
         self.topology = topology
 
 class Topology(object):
@@ -154,6 +154,8 @@ class Topology(object):
         return choices
     
     def group_bits(self):
+        assert self.hardware is not None
+        hardware = self.hardware
         edge2idx = self.edge2idx()
         self.groups = list()
         def fvisit_analyze(node):
@@ -166,7 +168,7 @@ class Topology(object):
                     return
 
                 in_edges = list_in_edges(node)
-                group = map(lambda x: self.edge2searchspaceidx(x), in_edges)
+                group = list(map(lambda x: self.edge2searchspaceidx[x], in_edges))
                 self.groups.append(group)
 
         relay.analysis.post_order_visit(self.graph, fvisit_analyze)
@@ -313,14 +315,10 @@ class Topology(object):
         ret = OrderedDict()
         cnt = 0
         node2idx = self.node2idx()
-        self.searchspaceidx2edge = OrderedDict()
-        self.edge2searchspaceidx = OrderedDict()
         for key, nidx in node2idx.items():
             val = None
             if self._node_conds[nidx]:
                 val = alist[cnt]
-                self.edge2searchspaceidx[key] = cnt
-                self.searchspaceidx2edge[cnt] = key
                 cnt += 1
             ret[key] = val
         assert cnt == len(alist)
@@ -330,10 +328,14 @@ class Topology(object):
         ret = OrderedDict()
         cnt = 0
         edge2idx = self.edge2idx()
+        self.searchspaceidx2edge = OrderedDict()
+        self.edge2searchspaceidx = OrderedDict()
         for key, eidx in edge2idx.items():
             val = None
             if self._edge_conds[eidx]:
                 val = alist[cnt]
+                self.edge2searchspaceidx[key] = cnt
+                self.searchspaceidx2edge[cnt] = key
                 cnt += 1
             ret[key] = val
         assert cnt == len(alist)
