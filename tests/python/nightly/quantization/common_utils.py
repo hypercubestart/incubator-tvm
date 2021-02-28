@@ -95,9 +95,6 @@ def quantize_hago(mod, params, calib_dataset,
         logging.debug('current quantize config')
         logging.debug(hago.current_qconfig())
         space = hago.generate_search_space(graph, hardware)
-        import pdb
-        pdb.set_trace()
-        space = SearchSpace(topology)
         if tuner is None:
             tuner = hago.DefaultSetting(space, 'accuracy')
         elif isinstance(tuner, list):
@@ -110,6 +107,7 @@ def quantize_hago(mod, params, calib_dataset,
             from tvm.hago.mixed_precision import GreedyMPTuner, RandomMPTuner, RandomSingleMPTuner
             tuner = GreedyMPTuner(space, 'accuracy', bits, 1)
         elif tuner == 'groupedgreedy':
+            from tvm.hago.mixed_precision import GroupedGreedyTuner
             tuner = GroupedGreedyTuner(space, 'accuracy', max_trials=max_trials)
 
         if eval_only:
