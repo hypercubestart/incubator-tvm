@@ -315,3 +315,70 @@ class GroupedGreedyTuner(Tuner):
   #   fout.write(serialize(self.best_measure))
   #   fout.write('\n')
 
+class GreedySearchTunerBackwards(Tuner):
+    def __init__(self, space, objective, max_trials=None, bits=None, validation_dataset=None):
+        super(GreedySearchTuner, self).__init__(space.search_space, objective, max_trials)
+        self.dim_idx = len(self.space) - 1
+        self.bit_idx = 0
+        self.decided = []
+        self.default = [choices[0] for choices in self.space]
+        self.bits = bits
+        if self.bits is not None:
+            self.bit_idx = self.space[self.dim_idx].index(self.bits[0])
+            self.default = self.bits
+
+    def has_next(self):
+        return self.dim_idx >= 0
+
+    def next_trials(self):
+        choice = self.space[self.dim_idx][self.bit_idx]
+        trials = [self.default[:self.dim_idx] + [choice] + self.decided]
+        return trials
+
+    def update(self, measures):
+        best_measure = self._update_best_measure(measures)
+        self.bit_idx += 1
+        if measures[0].result.accuracy < best_measure.result.accuracy or \
+            self.bit_idx >= len(self.space[self.dim_idx]):
+            # move to next dimension
+            best_bit = best_measure.strategy.bits[self.dim_idx]
+            self.decided.append(best_bit)
+            self.dim_idx -= 1
+            self.bit_idx = 0
+
+            if self.bits is not None and self.dim_idx >= 0:
+                self.bit_idx = self.space[self.dim_idx].index(self.bits[0])
+
+    def _measure(self, bits_list):
+        assert len(bits_list) == 1
+        bits = bits_list[0]
+        thresholds = threshold_estimate(self.graph, self.topology, self.stats, bits)
+        quantizer = qtz.Quantizer(self.graph, self.hardware, self.topology, bits, thresholds)
+        sgraph = quantizer.simulate()
+        qgraph = quantizer.quantize()
+        # print('original graph')
+        # print(self.graph)
+        # print('simulated graph')
+        # print(sgraph)
+        # print('quantized graph')
+        # print(qgraph)
+        # lowered_qgraph = relay.qnn.transform.CanonicalizeOps()(tvm.IRModule.from_expr(qgraph))
+        # print('lowered quantized graph')
+        # print(lowered_qgraph)
+        # raise ValueError
+
+        runtime = relay.create_executor("graph", ctx=self.ctx, target=self.target).evaluate(qgraph)
+        input_keys = [str(param.name_hint) for param in qgraph.params]
+        outputs = []
+        for batch_id, batch in enumerate(self.dataset):
+            inputs = {}
+            for key in input_keys:
+                assert key in batch
+                inputs[key] = batch[key]
+            out = runtime(**inputs)
+            outputs.append(out)
+        measure_result = self.measure_func(self.graph, self.dataset, outputs, self.ctx, self.target)
+        strategy = Strategy(self.model_hash, bits, thresholds)
+        result = Measure(strategy, measure_result)
+        print(result)
+        return [result]
