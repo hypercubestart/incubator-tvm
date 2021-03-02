@@ -226,7 +226,7 @@ class Tuner(object):
     def tune(self, graph, hardware, dataset, ctx, target, fout=None, validation_dataset=None):
         self.graph = graph
         self.hardware = hardware
-        self.validation_dataset = None
+        self.validation_dataset = validation_dataset
         self.model_hash = tvm.ir.structural_hash(graph)
         self.dataset = dataset
         self.ctx = ctx

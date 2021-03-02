@@ -317,7 +317,7 @@ class GroupedGreedyTuner(Tuner):
 
 class GreedySearchTunerBackwards(Tuner):
     def __init__(self, space, objective, max_trials=None, bits=None, validation_dataset=None):
-        super(GreedySearchTuner, self).__init__(space.search_space, objective, max_trials)
+        super(GreedySearchTunerBackwards, self).__init__(space.search_space, objective, max_trials)
         self.dim_idx = len(self.space) - 1
         self.bit_idx = 0
         self.decided = []
@@ -348,37 +348,3 @@ class GreedySearchTunerBackwards(Tuner):
 
             if self.bits is not None and self.dim_idx >= 0:
                 self.bit_idx = self.space[self.dim_idx].index(self.bits[0])
-
-    def _measure(self, bits_list):
-        assert len(bits_list) == 1
-        bits = bits_list[0]
-        thresholds = threshold_estimate(self.graph, self.topology, self.stats, bits)
-        quantizer = qtz.Quantizer(self.graph, self.hardware, self.topology, bits, thresholds)
-        sgraph = quantizer.simulate()
-        qgraph = quantizer.quantize()
-        # print('original graph')
-        # print(self.graph)
-        # print('simulated graph')
-        # print(sgraph)
-        # print('quantized graph')
-        # print(qgraph)
-        # lowered_qgraph = relay.qnn.transform.CanonicalizeOps()(tvm.IRModule.from_expr(qgraph))
-        # print('lowered quantized graph')
-        # print(lowered_qgraph)
-        # raise ValueError
-
-        runtime = relay.create_executor("graph", ctx=self.ctx, target=self.target).evaluate(qgraph)
-        input_keys = [str(param.name_hint) for param in qgraph.params]
-        outputs = []
-        for batch_id, batch in enumerate(self.dataset):
-            inputs = {}
-            for key in input_keys:
-                assert key in batch
-                inputs[key] = batch[key]
-            out = runtime(**inputs)
-            outputs.append(out)
-        measure_result = self.measure_func(self.graph, self.dataset, outputs, self.ctx, self.target)
-        strategy = Strategy(self.model_hash, bits, thresholds)
-        result = Measure(strategy, measure_result)
-        print(result)
-        return [result]

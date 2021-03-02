@@ -109,6 +109,9 @@ def quantize_hago(mod, params, calib_dataset,
         elif tuner == 'groupedgreedy':
             from tvm.hago.mixed_precision import GroupedGreedyTuner
             tuner = GroupedGreedyTuner(space, 'accuracy', max_trials=max_trials)
+        elif tuner == 'greedybackwards':
+            from tvm.hago.mixed_precision import GreedySearchTunerBackwards
+            tuner = GreedySearchTunerBackwards(space, 'accuracy', max_trials=max_trials)
 
         if eval_only:
             record = hago.pick_best(qconfig.log_file, "accuracy")
