@@ -342,7 +342,7 @@ class GreedySearchTunerBackwards(Tuner):
             self.bit_idx >= len(self.space[self.dim_idx]):
             # move to next dimension
             best_bit = best_measure.strategy.bits[self.dim_idx]
-            self.decided.append(best_bit)
+            self.decided = [best_bit] + self.decided
             self.dim_idx -= 1
             self.bit_idx = 0
 
