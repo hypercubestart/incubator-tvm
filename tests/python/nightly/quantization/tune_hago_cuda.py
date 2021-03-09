@@ -205,8 +205,8 @@ def create_hardware2():
 def main():
     # val_path = '/home/ubuntu/tensorflow_datasets/downloads/manual/imagenet2012/val.rec'
     # val_path = '~/.mxnet/datasets/imagenet/rec/val.rec'
-    # val_path = '/home/andy99/.mxnet/datasets/imagenet/rec/val.rec'
-    val_path = '/home/ziheng/datasets1/imagenet/rec/val.rec'
+    val_path = '/home/andy99/.mxnet/datasets/imagenet/rec/val.rec'
+    # val_path = '/home/ziheng/datasets1/imagenet/rec/val.rec'
     tuning_option = {
         "tuner": "xgb",
         "n_trial": 1500,
@@ -240,13 +240,13 @@ def main():
         qconfig = hago.qconfig(use_channel_quantize=False,
                                round_scale_to_pot=True,
                                log_file='temp.log')
-        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = greedy_int16, hardware = hardware)
+        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = greedy_int16, hardware = hardware, target=target)
         quantized_func = relay.qnn.transform.CanonicalizeOps()(quantized_func)
         print(quantized_func)
         log_file = "%s.%s.i8.i32.log" % (device_key, model_name)
         tuning_option['log_filename'] = log_file
         with tvm.transform.PassContext(opt_level=3):
-            lib = relay.build_module.build(mod, target=target, params=params)
+            lib = relay.build_module.build(quantized_func, target=target, params=params)
 
         # load parameters
         ctx = tvm.context(str(target), 0)
