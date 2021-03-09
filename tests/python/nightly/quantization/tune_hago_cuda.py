@@ -41,7 +41,6 @@ def get_val_data(img_size,
     rec_val = os.path.expanduser(rec_val)
     mean_rgb = [123.68, 116.779, 103.939]
     std_rgb = [58.393, 57.12, 57.375]
-    ctx = tvm.cpu()
     def batch_fn(batch, ctx):
         data = gluon.utils.split_and_load(batch.data[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch.label[0], ctx_list=ctx, batch_axis=0)
@@ -147,7 +146,6 @@ def tune_and_evaluate(mod, params, input_shape, tuning_opt, eval_only=False):
             lib = relay.build_module.build(mod, target=target, params=params)
 
         # load parameters
-        ctx = tvm.context(str(target), 0)
         module = runtime.GraphModule(lib["default"](ctx))
         dtype = "float32"
         data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
@@ -249,7 +247,6 @@ def main():
             lib = relay.build_module.build(quantized_func, target=target, params=params)
 
         # load parameters
-        ctx = tvm.context(str(target), 0)
         module = runtime.GraphModule(lib["default"](ctx))
         dtype = "float32"
         data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
