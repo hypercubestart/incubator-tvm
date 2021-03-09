@@ -161,11 +161,51 @@ def tune_and_evaluate(mod, params, input_shape, tuning_opt, eval_only=False):
             % (np.mean(prof_res), np.std(prof_res))
         )
 
+def create_hardware():
+    from tvm.hago.hardware import OpDesc
+    hardware = hago.Hardware()
+    # act_dtype = "int32"
+    # act_dtype = "int16"
+    act_dtype = "int8"
+    #hardware.add_op_desc("add", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    #hardware.add_op_desc("add", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    #hardware.add_op_desc("concatenate", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    #hardware.add_op_desc("concatenate", OpDesc(in_dtypes="int8", out_dtypes="int8"))
+    #hardware.add_op_desc("concatenate", OpDesc(in_dtypes="int32", out_dtypes="int32"))
+    hardware.add_op_desc("nn.conv2d", OpDesc(in_dtypes="int8", out_dtypes="int32"))
+    #hardware.add_op_desc("nn.relu", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    #hardware.add_op_desc("clip", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    #hardware.add_op_desc("nn.max_pool2d", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    #hardware.add_op_desc("nn.dropout", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    #hardware.add_op_desc("nn.avg_pool2d", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    #hardware.add_op_desc("nn.global_avg_pool2d", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    return hardware
+
+def create_hardware2():
+    from tvm.hago.hardware import OpDesc
+    hardware = hago.Hardware()
+    # act_dtype = "int32"
+    act_dtype = "int16"
+    # act_dtype = "int8"
+    hardware.add_op_desc("add", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    hardware.add_op_desc("add", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    hardware.add_op_desc("concatenate", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    hardware.add_op_desc("concatenate", OpDesc(in_dtypes="int8", out_dtypes="int8"))
+    hardware.add_op_desc("concatenate", OpDesc(in_dtypes="int32", out_dtypes="int32"))
+    hardware.add_op_desc("nn.conv2d", OpDesc(in_dtypes="int8", out_dtypes="int32"))
+    hardware.add_op_desc("nn.relu", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    hardware.add_op_desc("clip", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    hardware.add_op_desc("nn.max_pool2d", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
+    hardware.add_op_desc("nn.dropout", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    hardware.add_op_desc("nn.avg_pool2d", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    hardware.add_op_desc("nn.global_avg_pool2d", OpDesc(in_dtypes="float32", out_dtypes="float32"))
+    return hardware
 
 def main():
     # val_path = '/home/ubuntu/tensorflow_datasets/downloads/manual/imagenet2012/val.rec'
     # val_path = '~/.mxnet/datasets/imagenet/rec/val.rec'
-    val_path = '/home/andy99/.mxnet/datasets/imagenet/rec/val.rec'
+    # val_path = '/home/andy99/.mxnet/datasets/imagenet/rec/val.rec'
+    val_path = '/home/ziheng/datasets1/imagenet/rec/val.rec'
     tuning_option = {
         "tuner": "xgb",
         "n_trial": 1500,
@@ -190,17 +230,18 @@ def main():
             log_file = "%s.%s.f32.log" % (device_key, model_name)
             tuning_option['log_filename'] = log_file
             tune_and_evaluate(func, {}, input_shape, tuning_option)
+            exit()
 
         # Quantize
+        hardware = create_hardware2()
         calib_dataset = get_calibration_dataset(val_data, batch_fn, var_name='data')
         fp32_mod, params, input_shape = get_model(model_name)
         qconfig = hago.qconfig(use_channel_quantize=False,
                                round_scale_to_pot=True,
                                log_file='temp.log')
-        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig)
+        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = greedy_int16, hardware = hardware)
         quantized_func = relay.qnn.transform.CanonicalizeOps()(quantized_func)
         print(quantized_func)
-
         log_file = "%s.%s.i8.i32.log" % (device_key, model_name)
         tuning_option['log_filename'] = log_file
         tune_and_evaluate(quantized_func, {}, input_shape, tuning_option)

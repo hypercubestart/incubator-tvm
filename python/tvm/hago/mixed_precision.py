@@ -363,7 +363,7 @@ class DummyTuner(Tuner):
     return True
 
   def next_trials(self):
-    return self.bits
+    return [self.bits]
 
   def update(self, measures):
     self._update_best_measure(measures)
