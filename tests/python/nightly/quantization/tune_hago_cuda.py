@@ -240,7 +240,7 @@ def main():
         qconfig = hago.qconfig(use_channel_quantize=False,
                                round_scale_to_pot=True,
                                log_file='temp.log')
-        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = greedy_int16, hardware = hardware, target=target)
+        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = greedy_int16, hardware = hardware, target=target,ctx=ctx)
         quantized_func = relay.qnn.transform.CanonicalizeOps()(quantized_func)
         print(quantized_func)
         log_file = "%s.%s.i8.i32.log" % (device_key, model_name)
