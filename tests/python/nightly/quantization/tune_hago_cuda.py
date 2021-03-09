@@ -25,7 +25,7 @@ args = parser.parse_args()
 
 device_key = 'nvidia'
 target = 'cuda'
-ctx = tvm.target.cuda()
+ctx = tvm.context(target)
 
 log_dir = "andrew_logs/"
 batch_size = 1
@@ -249,9 +249,9 @@ def main():
         # load parameters
         module = runtime.GraphModule(lib["default"](ctx))
         dtype = "float32"
-        data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
         import pdb
         pdb.set_trace()
+        data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
         # tune_and_evaluate(quantized_func, {}, input_shape, tuning_option)
 
 if __name__ == '__main__':
