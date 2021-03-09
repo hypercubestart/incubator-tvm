@@ -149,6 +149,8 @@ def tune_and_evaluate(mod, params, input_shape, tuning_opt, eval_only=False):
         # load parameters
         ctx = tvm.context(str(target), 0)
         module = runtime.GraphModule(lib["default"](ctx))
+        import pdb
+        pdb.set_trace()
         data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
         module.set_input("data", data_tvm)
 
