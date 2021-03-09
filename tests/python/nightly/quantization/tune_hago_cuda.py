@@ -149,8 +149,6 @@ def tune_and_evaluate(mod, params, input_shape, tuning_opt, eval_only=False):
         # load parameters
         ctx = tvm.context(str(target), 0)
         module = runtime.GraphModule(lib["default"](ctx))
-        import pdb
-        pdb.set_trace()
         data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
         module.set_input("data", data_tvm)
 
@@ -246,7 +244,16 @@ def main():
         print(quantized_func)
         log_file = "%s.%s.i8.i32.log" % (device_key, model_name)
         tuning_option['log_filename'] = log_file
-        tune_and_evaluate(quantized_func, {}, input_shape, tuning_option)
+        with tvm.transform.PassContext(opt_level=3):
+            lib = relay.build_module.build(mod, target=target, params=params)
+
+        # load parameters
+        ctx = tvm.context(str(target), 0)
+        module = runtime.GraphModule(lib["default"](ctx))
+        data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
+        import pdb
+        pdb.set_trace()
+        # tune_and_evaluate(quantized_func, {}, input_shape, tuning_option)
 
 if __name__ == '__main__':
     main()
