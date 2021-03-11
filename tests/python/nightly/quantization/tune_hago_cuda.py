@@ -144,7 +144,8 @@ def tune_and_evaluate(mod, params, input_shape, tuning_opt, eval_only=False):
         print("Compile...")
         with tvm.transform.PassContext(opt_level=3):
             lib = relay.build_module.build(mod, target=target, params=params)
-
+        with open("tmp.cu", "w") as f:
+            f.write(lib.lib.imported_modules[0].get_source())
         # load parameters
         module = runtime.GraphModule(lib["default"](ctx))
         dtype = "float32"
@@ -203,7 +204,7 @@ def create_hardware2():
 def main():
     # val_path = '/home/ubuntu/tensorflow_datasets/downloads/manual/imagenet2012/val.rec'
     # val_path = '~/.mxnet/datasets/imagenet/rec/val.rec'
-    val_path = '/home/andy99/.mxnet/datasets/imagenet/rec/val.rec'
+    val_path = '/home/andrew/.mxnet/datasets/imagenet/rec/val.rec'
     # val_path = '/home/ziheng/datasets1/imagenet/rec/val.rec'
     tuning_option = {
         "tuner": "xgb",
@@ -228,31 +229,23 @@ def main():
             func = hago.prerequisite_optimize(fp32_mod['main'], params=params)
             log_file = "%s.%s.f32.log" % (device_key, model_name)
             tuning_option['log_filename'] = log_file
-            tune_and_evaluate(func, {}, input_shape, tuning_option)
+            tune_and_evaluate(func, {}, input_shape, tuning_option, True)
             exit()
 
         # Quantize
-        hardware = create_hardware2()
+        hardware = create_hardware()
         calib_dataset = get_calibration_dataset(val_data, batch_fn, var_name='data')
         fp32_mod, params, input_shape = get_model(model_name)
         qconfig = hago.qconfig(use_channel_quantize=False,
-                               round_scale_to_pot=True,
+                               round_scale_to_pot=False,
                                log_file='temp.log')
-        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = greedy_int16, hardware = hardware, target=target,ctx=ctx)
+        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = grouped_5convs, hardware = hardware, target=target,ctx=ctx)
         quantized_func = relay.qnn.transform.CanonicalizeOps()(quantized_func)
         print(quantized_func)
-        log_file = "%s.%s.i8.i32.log" % (device_key, model_name)
+        # log_file = "%s.%s.i8.i16.greedy.log" % (device_key, model_name)
+        log_file = "%s.%s.i4.5.i8.grouped.log" % (device_key, model_name)
         tuning_option['log_filename'] = log_file
-        with tvm.transform.PassContext(opt_level=3):
-            lib = relay.build_module.build(quantized_func, target=target, params=params)
-
-        # load parameters
-        module = runtime.GraphModule(lib["default"](ctx))
-        dtype = "float32"
-        import pdb
-        pdb.set_trace()
-        data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
-        # tune_and_evaluate(quantized_func, {}, input_shape, tuning_option)
+        tune_and_evaluate(quantized_func, {}, input_shape, tuning_option, True)
 
 if __name__ == '__main__':
     main()

@@ -469,7 +469,6 @@ def custom_callback(
     # pylint: disable=import-outside-toplevel
     from xgboost.core import EarlyStopException
     from xgboost.callback import _fmt_metric
-
     try:
         from xgboost.training import aggcv
     except ImportError:
