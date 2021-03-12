@@ -20,15 +20,16 @@ parser.add_argument("--run_all", default=False, action='store_true')
 args = parser.parse_args()
 
 batch_size = 32
-target = 'llvm -mcpu=core-avx2'
-ctx = tvm.context(target)
-# target = 'cuda'
-# ctx = tvm.gpu(3)
+# target = 'llvm -mcpu=core-avx2'
+# ctx = tvm.context(target)
+target = 'cuda'
+ctx = tvm.gpu()
 # best configuration for resnet18_v1
 resnet18_bits = [6, 7, 16, 14, 4, 16, 7, 7, 16, 14, 4, 8, 8, 16, 13, 15, 16, 4, 7, 8, 16, 12, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 15, 14, 8, 8, 16, 14, 4, 6, 8, 15, 13, 16, 16, 4, 8, 8, 16, 15, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 16, 15, 8, 8, 16, 14, 4, 8, 7, 13, 11, 15, 16, 4, 7, 8, 14, 12, 4, 8, 8, 11, 9, 16, 14, 4, 7, 8, 15, 14, 8, 8, 16, 11, 4, 7, 8, 14, 11, 12, 11, 4, 8, 8, 12, 9, 4, 7, 8, 12, 9, 6, 7, 5]
 
 b = [6, 7, 16, 14, 4, 16, 7, 7, 16, 14, 4, 8, 8, 16, 13, 15, 16, 4, 7, 8, 16, 12, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 15, 14, 8, 8, 16, 14, 4, 6, 8, 15, 13, 16, 16, 4, 8, 8, 16, 15, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 16, 15, 8, 8, 16, 14, 4, 8, 7, 13, 11, 15, 16, 4, 7, 8, 14, 12, 4, 8, 8, 11, 9, 16, 14, 4, 7, 8, 15, 14, 8, 8, 16, 11, 4, 7, 8, 14, 11, 12, 11, 4, 8, 8, 12, 9, 4, 7, 8, 12, 9, 6, 7, 4]
 
+uniform8 = [8,8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8] 
 
 #####################
 # Dataset prepartions
@@ -113,20 +114,23 @@ def main():
             print("fp32_accuracy", model_name, acc, sep=',')
 
         # Quantize
-        calib_dataset_size = 1000 # 100 is default
-        validation_dataset_size = 1000
+        calib_dataset_size = 100 # 100 is default
+        validation_dataset_size = 100
         calib_dataset = get_calibration_dataset(val_data, batch_fn, var_name='data', num_samples=calib_dataset_size)
         fp32_mod, params = get_model(model_name, )
         print(fp32_mod)
         qconfig = hago.qconfig(use_channel_quantize=is_per_channel,
                                round_scale_to_pot=False,
-                               log_file='/home/andy99/logs/grouped/groupedgreedy_1000calib_1000valid.log')
+                               log_file = 'temp.log')
+                               # log_file='/home/andy99/logs/grouped/groupedgreedy_1000calib_1000valid.log')
                                #log_file='/home/andy99/logs/mixed_precision/strategy_{}_greedy_1-1edges.log'.format(model_name))
         
         max_trials = 20
         hardware = create_hardware()
+        bits = uniform8
         validation_dataset = get_validation_dataset(val_data, batch_fn, var_name='data', offset=calib_dataset_size, num_samples=validation_dataset_size)
-        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, hardware, 'groupedgreedy', target, ctx, bits=b, max_trials=max_trials, validation_dataset=validation_dataset)
+        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, hardware, 'dummy', target, ctx, bits=bits, max_trials=max_trials, validation_dataset=validation_dataset)
+        exit()
         acc = eval_acc(quantized_func, val_data, batch_fn, args, var_name='data', target=target, ctx=ctx)
         channel_or_tensor = "per_channel" if is_per_channel else "per_tensor"
         print("quantized_accuracy", model_name, channel_or_tensor, acc, sep=',')
