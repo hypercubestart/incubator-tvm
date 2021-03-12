@@ -473,15 +473,11 @@ inline void PrintBinaryExpr(const T* op, const char* opstr,
                             CodeGenC* p) {
   if (op->dtype.lanes() == 1) {
     if (isalpha(opstr[0])) {
-      os << opstr << "((";
-      p->PrintType(op->a.dtype(), os);
-      os << ")(";
+      os << opstr << '(';
       p->PrintExpr(op->a, os);
-      os << "), (";
-      p->PrintType(op->b.dtype(), os);
-      os << ")(";
+      os << ", ";
       p->PrintExpr(op->b, os);
-      os << "))";
+      os << ')';
     } else {
       os << '(';
       p->PrintExpr(op->a, os);
@@ -630,80 +626,28 @@ void CodeGenC::VisitExpr_(const CallNode* op, std::ostream& os) {  // NOLINT(*)
       if (l->dtype.bits() == 4 || (l->dtype.bits() == 1 && l->dtype.is_int())) {
         os << " / " << (32 / l->dtype.bits());
       }
-    }
-    os << ")";
-  } else if (op->is_intrinsic(CallNode::bitwise_and)) {
-    PrintBinaryIntrinsic(op, " & ", os, this);
-  } else if (op->is_intrinsic(intrinsic::tvm_large_uint_imm)) {
-    CHECK_EQ(op->args.size(), 2U);
-    uint64_t low = static_cast<uint64_t>(Downcast<IntImm>(op->args[0])->value);
-    uint64_t high = static_cast<uint64_t>(Downcast<IntImm>(op->args[1])->value);
-    uint64_t val = (high << 32U) | low;
-    PrintUIntConst(op->dtype, val, os, this);
-  } else if (op->is_intrinsic(CallNode::bitwise_xor)) {
-    PrintBinaryIntrinsic(op, " ^ ", os, this);
-  } else if (op->is_intrinsic(CallNode::bitwise_or)) {
-    PrintBinaryIntrinsic(op, " | ", os, this);
-  } else if (op->is_intrinsic(CallNode::bitwise_not)) {
-    CHECK_EQ(op->args.size(), 1U);
-    os << "(~";
-    this->PrintExpr(op->args[0], os);
-    os << ')';
-  } else if (op->is_intrinsic(CallNode::shift_left)) {
-    PrintBinaryIntrinsic(op, " << ", os, this);
-  } else if (op->is_intrinsic(CallNode::shift_right)) {
-    PrintBinaryIntrinsic(op, " >> ", os, this);
-  } else if (op->is_intrinsic(intrinsic::tvm_if_then_else)) {
-    // os << "(";
-    // PrintExpr(op->args[0], os);
-    // os << " ? ";
-    // PrintExpr(op->args[1], os);
-    // os << " : ";
-    // PrintExpr(op->args[2], os);
-    // os << ")";
-    os << "(";
-    PrintExpr(op->args[0], os);
-    os << " ? (";
-    PrintType(op->args[1].dtype(), os);
-    os << ")";
-    PrintExpr(op->args[1], os);
-    os << " : (";
-    PrintType(op->args[2].dtype(), os);
-    os << ")";
-    PrintExpr(op->args[2], os);
-    os << ")";
-  } else if (op->is_intrinsic(intrinsic::tvm_address_of)) {
-    const LoadNode* l = op->args[0].as<LoadNode>();
-    CHECK(op->args.size() == 1 && l);
-    os << "((";
-    this->PrintType(l->dtype.element_of(), os);
-    os << " *)" << this->GetVarID(l->buffer_var.get()) << " + ";
-    this->PrintExpr(l->index, os);
-    os << ')';
-  } else if (op->is_intrinsic(intrinsic::tvm_struct_get)) {
-    CHECK_EQ(op->args.size(), 3U);
-    os << GetStructRef(op->dtype, op->args[0], op->args[1], op->args[2].as<IntImmNode>()->value);
-  } else if (op->is_intrinsic(intrinsic::tvm_handle_is_null)) {
-    CHECK_EQ(op->args.size(), 1U);
-    os << "(";
-    this->PrintExpr(op->args[0], os);
-    os << " == NULL)";
-  } else if (op->is_intrinsic(CallNode::reinterpret)) {
-    // generate (*( TYPE *)(&(ARG)))
-    os << "(*(";
-    this->PrintType(op->dtype, os);
-    os << " *)(&(";
-    this->PrintExpr(op->args[0], os);
-    os << ")))";
-  } else if (op->is_intrinsic(CallNode::isnan)) {
-    os << "(";
-    this->PrintExpr(op->args[0], os);
-    os << " != ";
-    this->PrintExpr(op->args[0], os);
-    os << ")";
-  } else {
-    if (op->call_type == CallNode::Intrinsic || op->call_type == CallNode::PureIntrinsic) {
-      LOG(FATAL) << "Unresolved intrinsic " << op->name << " with return type " << op->dtype;
+      os << "))";
+    } else if (op->op.same_as(builtin::tvm_struct_get())) {
+      ICHECK_EQ(op->args.size(), 3U);
+      os << GetStructRef(op->dtype, op->args[0], op->args[1], op->args[2].as<IntImmNode>()->value);
+    } else if (op->op.same_as(builtin::isnullptr())) {
+      ICHECK_EQ(op->args.size(), 1U);
+      os << "(";
+      this->PrintExpr(op->args[0], os);
+      os << " == NULL)";
+    } else if (op->op.same_as(builtin::reinterpret())) {
+      int ssa_scope = BeginScope();
+      std::string rhs = SSAGetID(PrintExpr(op->args[0]), op->args[0]->dtype);
+      os << "(*(";
+      this->PrintType(op->dtype, os);
+      os << " *)(&(" << rhs << ")))";
+      EndScope(ssa_scope);
+    } else if (op->op.same_as(builtin::isnan())) {
+      os << "(";
+      this->PrintExpr(op->args[0], os);
+      os << " != ";
+      this->PrintExpr(op->args[0], os);
+      os << ")";
     } else {
       LOG(FATAL) << "Unresolved call " << op->op;
     }
