@@ -12,10 +12,12 @@ from tvm import autotvm
 from tvm import relay
 import tvm.relay.testing
 from tvm.autotvm.tuner import XGBTuner, GATuner, RandomTuner, GridSearchTuner
-from tvm.contrib.util import tempdir
+from tvm.contrib.utils import tempdir
 import tvm.contrib.graph_runtime as runtime
 from common_utils import *
 
+import logging
+logging.getLogger('autotvm').setLevel(logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", default="resnet18_v1", help="model to quantize")
@@ -27,11 +29,11 @@ device_key = 'nvidia'
 target = 'cuda'
 ctx = tvm.context(target)
 
-log_dir = "andrew_logs/"
-batch_size = 1
+log_dir = "andrew_logs2/"
+batch_size = 32
 
 greedy_int16 = [6, 7, 16, 14, 4, 16, 7, 7, 16, 14, 4, 8, 8, 16, 13, 15, 16, 4, 7, 8, 16, 12, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 15, 14, 8, 8, 16, 14, 4, 6, 8, 15, 13, 16, 16, 4, 8, 8, 16, 15, 4, 8, 8, 16, 14, 16, 16, 4, 8, 8, 16, 15, 8, 8, 16, 14, 4, 8, 7, 13, 11, 15, 16, 4, 7, 8, 14, 12, 4, 8, 8, 11, 9, 16, 14, 4, 7, 8, 15, 14, 8, 8, 16, 11, 4, 7, 8, 14, 11, 12, 11, 4, 8, 8, 12, 9, 4, 7, 8, 12, 9, 6, 7, 5]
-grouped_uniform8 = [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,4,4,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8]
+grouped_uniform8 = [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8]
 grouped_5convs = [8,8,8,8,8,8,8,8,4,4,8,8,8,8,8,8,8,8,8,8,4,4,8,8,8,8,8,8,4,4,4,4,8,8,8,8,4,4,8,8]
 
 def get_val_data(img_size,
@@ -95,6 +97,8 @@ def tune_tasks(
             tuner_obj = XGBTuner(tsk, loss_type="rank")
         elif tuner == "xgb_knob":
             tuner_obj = XGBTuner(tsk, loss_type="rank", feature_type="knob")
+        elif tuner == "xgb-curve":
+            tuner_obj = XGBTuner(tsk, loss_type="rank", feature_type="curve")
         elif tuner == "ga":
             tuner_obj = GATuner(tsk, pop_size=50)
         elif tuner == "random":
@@ -172,6 +176,7 @@ def create_hardware():
     #hardware.add_op_desc("concatenate", OpDesc(in_dtypes="float32", out_dtypes="float32"))
     #hardware.add_op_desc("concatenate", OpDesc(in_dtypes="int8", out_dtypes="int8"))
     #hardware.add_op_desc("concatenate", OpDesc(in_dtypes="int32", out_dtypes="int32"))
+    hardware.add_op_desc("nn.conv2d", OpDesc(in_dtypes="int4", out_dtypes="int32"))
     hardware.add_op_desc("nn.conv2d", OpDesc(in_dtypes="int8", out_dtypes="int32"))
     #hardware.add_op_desc("nn.relu", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
     #hardware.add_op_desc("clip", OpDesc(in_dtypes=act_dtype, out_dtypes=act_dtype))
@@ -215,6 +220,15 @@ def main():
             runner=autotvm.LocalRunner(number=20, repeat=3, timeout=4, min_repeat_ms=150),
         ),
     }
+    def use_tensorcore(mod):
+        layout_config = relay.transform.LayoutConfig(skip_layers=[0])
+        desired_layouts = {'nn.conv2d': ['HWNC', 'default']} 
+        with layout_config:
+            seq = tvm.transform.Sequential([relay.transform.ConvertLayout(desired_layouts)])
+            with tvm.transform.PassContext(opt_level=3):
+                mod = seq(mod)
+                # mod = relay.transform.recast(mod, 'int4', 'int32', skip_layers=[0])
+                return mod
 
     if args.run_all:
         models = ['resnet18_v1', 'mobilenet1.0', 'mobilenetv2_1.0']
@@ -229,7 +243,7 @@ def main():
             func = hago.prerequisite_optimize(fp32_mod['main'], params=params)
             log_file = "%s.%s.f32.log" % (device_key, model_name)
             tuning_option['log_filename'] = log_file
-            tune_and_evaluate(func, {}, input_shape, tuning_option, True)
+            tune_and_evaluate(func, {}, input_shape, tuning_option)
             exit()
 
         # Quantize
@@ -239,13 +253,17 @@ def main():
         qconfig = hago.qconfig(use_channel_quantize=False,
                                round_scale_to_pot=False,
                                log_file='temp.log')
-        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = grouped_5convs, hardware = hardware, target=target,ctx=ctx)
+        quantized_func = quantize_hago(fp32_mod, params, calib_dataset, qconfig, tuner = 'dummy', bits = grouped_uniform8, hardware = hardware, target=target,ctx=ctx)
         quantized_func = relay.qnn.transform.CanonicalizeOps()(quantized_func)
+        quantized_func = use_tensorcore(quantized_func)
+        with open("quantized_func.relay", "w") as f:
+            f.write(quantized_func.astext())
         print(quantized_func)
-        # log_file = "%s.%s.i8.i16.greedy.log" % (device_key, model_name)
-        log_file = "%s.%s.i4.5.i8.grouped.log" % (device_key, model_name)
+        log_file = "%s.%s.i8.conv.uniform.log" % (device_key, model_name)
+        # log_file = "%s.%s.i4.5.i8.grouped.log" % (device_key, model_name)
         tuning_option['log_filename'] = log_file
-        tune_and_evaluate(quantized_func, {}, input_shape, tuning_option, True)
+        # tuning_option['tuner'] = "xgb-curve"
+        tune_and_evaluate(quantized_func, {}, input_shape, tuning_option)
 
 if __name__ == '__main__':
     main()

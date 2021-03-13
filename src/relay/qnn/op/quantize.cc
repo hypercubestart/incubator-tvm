@@ -64,8 +64,8 @@ bool QuantizeRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
   const DataType out_dtype = quantize_attrs->out_dtype;
   CHECK(out_dtype == DataType::Int(8) || out_dtype == DataType::UInt(8) ||
         out_dtype == DataType::Int(16) || out_dtype == DataType::UInt(16) ||
-        out_dtype == DataType::Int(32))
-      << "Output type should be one of [int8, unit8, int16, uint16, int32] but was " << out_dtype;
+        out_dtype == DataType::Int(32) || out_dtype == DataType::Int(4))
+      << "Output type should be one of [int4, int8, unit8, int16, uint16, int32] but was " << out_dtype;
   // assign output type
   reporter->Assign(types[3], TensorType(oshape, out_dtype));
   return true;
