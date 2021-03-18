@@ -92,12 +92,14 @@ def select_desc(graph, hardware, topology, bits):
             print('---------')
             print(node_str(node, node2idx))
             in_bits = [edge2bit[edge] for edge in list_in_edges(node)]
-            for bit in in_bits:
-                assert bit is not None
-            print('  in bits: {}'.format(in_bits))
-            desc = select(node, in_bits, hardware)
-            print('  {0}'.format(desc))
-            descs[node2idx[node]] = desc
+            # for bit in in_bits:
+            #     assert bit is not None
+            if all(in_bits): # if bit is None, use float32 for this node
+                print('  in bits: {}'.format(in_bits))
+                desc = select(node, in_bits, hardware)
+                print('  {0}'.format(desc))
+                descs[node2idx[node]] = desc
+
     relay.analysis.post_order_visit(graph, fvisit)
     return descs
 
